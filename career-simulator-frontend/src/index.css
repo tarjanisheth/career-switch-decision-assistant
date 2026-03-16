@@ -1,0 +1,137 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: #f5f3ff;
+  font-family: Inter, Arial, sans-serif;
+}
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 20px;
+}
+
+.main-title {
+  font-size: 42px;
+  font-weight: 700;
+  color: #4c1d95;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  color: #6d28d9;
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.card {
+  background: #ffffff;
+  padding: 50px;
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* 👈 ADD THIS */
+  gap: 18px;
+  box-shadow: 0 20px 50px rgba(167, 139, 250, 0.15);
+  width: 100%;
+  max-width: 520px;
+}
+
+input,
+select,
+button {
+  padding: 14px 40px 14px 14px;  /* 👈 extra right padding */
+  border-radius: 12px;
+  border: 1px solid #d4d4d8;
+  font-size: 16px;
+  width: 100%;
+  max-width: 460px;
+  text-align: center;
+}
+
+/* Remove default browser arrow */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  text-align-last: center;
+  padding-right: 45px; /* space for custom arrow */
+}
+
+/* Wrap select */
+.select-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+}
+
+/* Custom arrow */
+.select-wrapper::after {
+  content: "▾";
+  position: absolute;
+  right: 14px;   /* 👈 aligns with number steppers */
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: #6d28d9;
+  pointer-events: none;
+}
+
+select option {
+  text-align: left;          /* dropdown list stays normal */
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #7c3aed;
+}
+
+button {
+  background: #7c3aed;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+button:hover {
+  background: #6d28d9;
+}
+
+.start-over {
+  margin-top: 40px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 220px;
+}
+
+.error {
+  color: red;
+  font-size: 14px;
+}
+
+.result-wrapper {
+  width: 100%;
+  max-width: 1100px;
+  margin-top: 40px;
+}
+
+.graph-container {
+  height: 600px;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;          /* centers horizontally */
+  background: white;
+  border-radius: 24px;
+  display: flex;
+  justify-content: center; /* center ReactFlow */
+  align-items: center;
+}
