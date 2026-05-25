@@ -2,46 +2,80 @@ import { useState } from "react";
 import ReactFlow from "reactflow";
 import "reactflow/dist/style.css";
 
+const initialFormData = {
+  financial: {
+    monthly_salary: "",
+    monthly_expenses: "",
+    current_savings: "",
+    other_monthly_income: "",
+    monthly_debt_payment: "",
+    dependents_count: "",
+    cost_of_living_level: "",
+  },
+  professional: {
+    years_experience: "",
+    market_demand_level: "",
+    expected_months_before_income: "",
+    career_switch_type: "",
+  },
+  personal: {
+    risk_tolerance_score: 5,
+    burnout_level: 5,
+    emotional_resilience_score: 5,
+    family_support_level: "",
+  },
+};
+
 function App() {
   const [step, setStep] = useState(1);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-
-  const [formData, setFormData] = useState({
-    financial: {
-      monthly_salary: "",
-      monthly_expenses: "",
-      current_savings: "",
-    },
-    professional: {
-      years_experience: "",
-      market_demand_level: "",
-      expected_months_before_income: "",
-      career_switch_type: "",
-    },
-    personal: {
-      risk_tolerance_score: 5,
-      burnout_level: 5,
-      emotional_resilience_score: 5,
-    },
-  });
+  const [formData, setFormData] = useState(initialFormData);
 
   const handleChange = (section, field, value) => {
-    if (value < 0) return; // prevent negative
+    if (
+      ["monthly_salary", "monthly_expenses", "current_savings",
+       "other_monthly_income", "monthly_debt_payment",
+       "dependents_count", "years_experience",
+       "expected_months_before_income"].includes(field)
+    ) {
+      if (value < 0) return;
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [section]: { ...prev[section], [field]: value },
+      [section]: {
+        ...prev[section],
+        [field]: value,
+      },
     }));
   };
 
   const validateStep1 = () => {
-    const { monthly_salary, monthly_expenses, current_savings } =
-      formData.financial;
-    if (!monthly_salary || !monthly_expenses || !current_savings) {
-      setErrors({ step1: "All fields are required." });
+    const {
+      monthly_salary,
+      monthly_expenses,
+      current_savings,
+      other_monthly_income,
+      monthly_debt_payment,
+      dependents_count,
+      cost_of_living_level,
+    } = formData.financial;
+
+    if (
+      monthly_salary === "" ||
+      monthly_expenses === "" ||
+      current_savings === "" ||
+      other_monthly_income === "" ||
+      monthly_debt_payment === "" ||
+      dependents_count === "" ||
+      !cost_of_living_level
+    ) {
+      setErrors({ step1: "All financial fields are required." });
       return false;
     }
+
     return true;
   };
 
@@ -59,9 +93,19 @@ function App() {
       !expected_months_before_income ||
       !career_switch_type
     ) {
-      setErrors({ step2: "All fields are required." });
+      setErrors({ step2: "All professional fields are required." });
       return false;
     }
+
+    return true;
+  };
+
+  const validateStep3 = () => {
+    if (!formData.personal.family_support_level) {
+      setErrors({ step3: "Please select family support level." });
+      return false;
+    }
+
     return true;
   };
 
@@ -69,49 +113,72 @@ function App() {
     setLoading(true);
     setErrors({});
 
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/simulate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        financial: {
-          monthly_salary: Number(formData.financial.monthly_salary),
-          monthly_expenses: Number(formData.financial.monthly_expenses),
-          current_savings: Number(formData.financial.current_savings),
-          other_monthly_income: 0,
-          monthly_debt_payment: 0,
-          dependents_count: 0,
-          cost_of_living_level: "medium",
-        },
-        professional: {
-          years_experience: Number(formData.professional.years_experience),
-          market_demand_level: formData.professional.market_demand_level,
-          expected_months_before_income: Number(
-            formData.professional.expected_months_before_income
-          ),
-          career_switch_type: formData.professional.career_switch_type,
-        },
-        personal: {
-          risk_tolerance_score: Number(formData.personal.risk_tolerance_score),
-          burnout_level: Number(formData.personal.burnout_level),
-          emotional_resilience_score: Number(
-            formData.personal.emotional_resilience_score
-          ),
-          family_support_level: "partial",
-        },
-      }),
-    });
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/simulate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            financial: {
+              monthly_salary: Number(formData.financial.monthly_salary),
+              monthly_expenses: Number(formData.financial.monthly_expenses),
+              current_savings: Number(formData.financial.current_savings),
+              other_monthly_income: Number(formData.financial.other_monthly_income),
+              monthly_debt_payment: Number(formData.financial.monthly_debt_payment),
+              dependents_count: Number(formData.financial.dependents_count),
+              cost_of_living_level: formData.financial.cost_of_living_level,
+            },
+            professional: {
+              years_experience: Number(formData.professional.years_experience),
+              market_demand_level: formData.professional.market_demand_level,
+              expected_months_before_income: Number(
+                formData.professional.expected_months_before_income
+              ),
+              career_switch_type: formData.professional.career_switch_type,
+            },
+            personal: {
+              risk_tolerance_score: Number(formData.personal.risk_tolerance_score),
+              burnout_level: Number(formData.personal.burnout_level),
+              emotional_resilience_score: Number(
+                formData.personal.emotional_resilience_score
+              ),
+              family_support_level: formData.personal.family_support_level,
+            },
+          }),
+        }
+      );
 
-    const data = await response.json();
-    setResult(data);
-    setLoading(false);
-    setStep(4);
+      if (!response.ok) {
+        throw new Error("Simulation failed");
+      }
+
+      const data = await response.json();
+      setResult(data);
+      setStep(4);
+    } catch (error) {
+      setErrors({
+        step3: "Something went wrong while analyzing. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetApp = () => {
+    setStep(1);
+    setResult(null);
+    setErrors({});
+    setFormData(initialFormData);
   };
 
   return (
     <div className="container">
       <h1 className="main-title">Career Switch Decision Assistant</h1>
       <p className="subtitle">
-        This tool evaluates what could realistically happen if you quit your job.
+        Evaluate whether quitting your current job for a career switch is realistically safe.
       </p>
 
       {step === 1 && (
@@ -127,6 +194,7 @@ function App() {
               handleChange("financial", "monthly_salary", e.target.value)
             }
           />
+
           <input
             type="number"
             min="0"
@@ -136,6 +204,7 @@ function App() {
               handleChange("financial", "monthly_expenses", e.target.value)
             }
           />
+
           <input
             type="number"
             min="0"
@@ -145,6 +214,50 @@ function App() {
               handleChange("financial", "current_savings", e.target.value)
             }
           />
+
+          <input
+            type="number"
+            min="0"
+            placeholder="Other Monthly Income"
+            value={formData.financial.other_monthly_income}
+            onChange={(e) =>
+              handleChange("financial", "other_monthly_income", e.target.value)
+            }
+          />
+
+          <input
+            type="number"
+            min="0"
+            placeholder="Monthly Debt Payment"
+            value={formData.financial.monthly_debt_payment}
+            onChange={(e) =>
+              handleChange("financial", "monthly_debt_payment", e.target.value)
+            }
+          />
+
+          <input
+            type="number"
+            min="0"
+            placeholder="Number of Dependents"
+            value={formData.financial.dependents_count}
+            onChange={(e) =>
+              handleChange("financial", "dependents_count", e.target.value)
+            }
+          />
+
+          <div className="select-wrapper">
+            <select
+              value={formData.financial.cost_of_living_level}
+              onChange={(e) =>
+                handleChange("financial", "cost_of_living_level", e.target.value)
+              }
+            >
+              <option value="">Select Cost of Living</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
 
           {errors.step1 && <p className="error">{errors.step1}</p>}
 
@@ -175,21 +288,21 @@ function App() {
             }
           />
 
-<div className="select-wrapper">
-  <select
-    value={formData.professional.market_demand_level}
-    onChange={(e) =>
-      handleChange("professional", "market_demand_level", e.target.value)
-    }
-  >
-    <option value="">Select Market Demand</option>
-    <option value="very_high">Very High Demand</option>
-    <option value="growing">Growing</option>
-    <option value="stable">Stable</option>
-    <option value="saturated">Saturated</option>
-    <option value="declining">Declining</option>
-  </select>
-</div>
+          <div className="select-wrapper">
+            <select
+              value={formData.professional.market_demand_level}
+              onChange={(e) =>
+                handleChange("professional", "market_demand_level", e.target.value)
+              }
+            >
+              <option value="">Select Market Demand</option>
+              <option value="very_high">Very High Demand</option>
+              <option value="growing">Growing</option>
+              <option value="stable">Stable</option>
+              <option value="saturated">Saturated</option>
+              <option value="declining">Declining</option>
+            </select>
+          </div>
 
           <input
             type="number"
@@ -205,19 +318,19 @@ function App() {
             }
           />
 
-<div className="select-wrapper">
-  <select
-    value={formData.professional.career_switch_type}
-    onChange={(e) =>
-      handleChange("professional", "career_switch_type", e.target.value)
-    }
-  >
-    <option value="">Select Switch Type</option>
-    <option value="same_field">Same Field</option>
-    <option value="adjacent_field">Adjacent Field</option>
-    <option value="new_field">New Field</option>
-  </select>
-</div>
+          <div className="select-wrapper">
+            <select
+              value={formData.professional.career_switch_type}
+              onChange={(e) =>
+                handleChange("professional", "career_switch_type", e.target.value)
+              }
+            >
+              <option value="">Select Switch Type</option>
+              <option value="same_field">Same Field</option>
+              <option value="adjacent_field">Adjacent Field</option>
+              <option value="new_field">New Field</option>
+            </select>
+          </div>
 
           {errors.step2 && <p className="error">{errors.step2}</p>}
 
@@ -277,170 +390,130 @@ function App() {
             }
           />
 
-          <button onClick={runSimulation}>
+          <div className="select-wrapper">
+            <select
+              value={formData.personal.family_support_level}
+              onChange={(e) =>
+                handleChange("personal", "family_support_level", e.target.value)
+              }
+            >
+              <option value="">Select Family Support</option>
+              <option value="none">None</option>
+              <option value="partial">Partial</option>
+              <option value="strong">Strong</option>
+            </select>
+          </div>
+
+          {errors.step3 && <p className="error">{errors.step3}</p>}
+
+          <button
+            onClick={() => {
+              if (validateStep3()) {
+                runSimulation();
+              }
+            }}
+          >
             {loading ? "Analyzing..." : "Analyze My Career Switch"}
           </button>
         </div>
       )}
 
-{step === 4 && result && (
-  <div className="result-wrapper">
-    <div className="graph-container">
-      <ReactFlow
-        nodes={[
-          {
-            id: "start",
-            position: { x: 250, y: 0 },
-            data: { label: "IF YOU QUIT TODAY" },
-            style: {
-              padding: 20,
-              borderRadius: 16,
-              background: "#7c3aed",
-              color: "white",
-              fontWeight: 600,
-              width: 260,
-              textAlign: "center",
-            },
-          },
-          {
-            id: "financial",
-            position: { x: 0, y: 150 },
-            data: {
-              label:
-                result.financial_analysis?.runway_months === "Infinite"
-                  ? "You are financially secure even after quitting."
-                  : result.financial_analysis?.runway_months < 3
-                  ? "Your financial runway is very short. Risk is high."
-                  : result.financial_analysis?.runway_months < 6
-                  ? "Your savings provide moderate safety. Caution advised."
-                  : "You have reasonable financial buffer for transition.",
-            },
-            style: {
-              padding: 20,
-              borderRadius: 16,
-              background: "#ede9fe",
-              width: 260,
-              textAlign: "center",
-            },
-          },
-          {
-            id: "professional",
-            position: { x: 250, y: 150 },
-            data: {
-              label:
-                result.professional_analysis?.success_probability_percent >= 70
-                  ? "You are strongly positioned in this field."
-                  : result.professional_analysis?.success_probability_percent >=
-                    50
-                  ? "Your positioning is moderate. Strategic planning required."
-                  : "Your positioning is currently weak. Skill strengthening recommended.",
-            },
-            style: {
-              padding: 20,
-              borderRadius: 16,
-              background: "#ddd6fe",
-              width: 260,
-              textAlign: "center",
-            },
-          },
-          {
-            id: "personal",
-            position: { x: 500, y: 150 },
-            data: {
-              label:
-                result.personal_analysis?.personal_stability_score >= 60
-                  ? "You appear emotionally prepared for change."
-                  : result.personal_analysis?.personal_stability_score >= 30
-                  ? "You have moderate emotional stability."
-                  : "Your emotional readiness may need strengthening.",
-            },
-            style: {
-              padding: 20,
-              borderRadius: 16,
-              background: "#ede9fe",
-              width: 260,
-              textAlign: "center",
-            },
-          },
-{
-  id: "final",
-  position: { x: 250, y: 320 },
-  data: {
-    label: (() => {
-      const runway = result.financial_analysis?.runway_months;
-      const success =
-        result.professional_analysis?.success_probability_percent;
-      const stability =
-        result.personal_analysis?.personal_stability_score;
+      {step === 4 && result && (
+        <div className="result-wrapper">
+          <div className="graph-container">
+            <ReactFlow
+              nodes={[
+                {
+                  id: "start",
+                  position: { x: 250, y: 0 },
+                  data: { label: "IF YOU QUIT TODAY" },
+                  style: {
+                    padding: 20,
+                    borderRadius: 16,
+                    background: "#7c3aed",
+                    color: "white",
+                    fontWeight: 600,
+                    width: 260,
+                    textAlign: "center",
+                  },
+                },
+                {
+                  id: "financial",
+                  position: { x: 0, y: 150 },
+                  data: {
+                    label: result.financial_analysis?.financial_risk_level,
+                  },
+                  style: {
+                    padding: 20,
+                    borderRadius: 16,
+                    background: "#ede9fe",
+                    width: 260,
+                    textAlign: "center",
+                  },
+                },
+                {
+                  id: "professional",
+                  position: { x: 250, y: 150 },
+                  data: {
+                    label: result.professional_analysis?.professional_risk_level,
+                  },
+                  style: {
+                    padding: 20,
+                    borderRadius: 16,
+                    background: "#ddd6fe",
+                    width: 260,
+                    textAlign: "center",
+                  },
+                },
+                {
+                  id: "personal",
+                  position: { x: 500, y: 150 },
+                  data: {
+                    label: result.personal_analysis?.personal_risk_profile,
+                  },
+                  style: {
+                    padding: 20,
+                    borderRadius: 16,
+                    background: "#ede9fe",
+                    width: 260,
+                    textAlign: "center",
+                  },
+                },
+                {
+                  id: "final",
+                  position: { x: 180, y: 320 },
+                  data: {
+                    label: result.decision_summary?.recommendation,
+                  },
+                  style: {
+                    padding: 24,
+                    borderRadius: 18,
+                    background: "#a78bfa",
+                    color: "#111827",
+                    fontWeight: 600,
+                    width: 600,
+                    textAlign: "center",
+                    lineHeight: "1.5",
+                  },
+                },
+              ]}
+              edges={[
+                { id: "e1", source: "start", target: "financial" },
+                { id: "e2", source: "start", target: "professional" },
+                { id: "e3", source: "start", target: "personal" },
+                { id: "e4", source: "financial", target: "final" },
+                { id: "e5", source: "professional", target: "final" },
+                { id: "e6", source: "personal", target: "final" },
+              ]}
+              fitView
+            />
+          </div>
 
-      const strongMoney = runway === "Infinite" || runway >= 6;
-      const weakMoney = runway !== "Infinite" && runway < 3;
-
-      const strongCareer = success >= 65;
-      const weakCareer = success < 50;
-
-      const strongMind = stability >= 60;
-      const weakMind = stability < 40;
-
-      // ✅ ALL STRONG
-      if (strongMoney && strongCareer && strongMind) {
-        return "You are financially stable, professionally prepared, and mentally ready. With proper planning, you can consider making this move.";
-      }
-
-      // ❗ MONEY PROBLEM
-      if (weakMoney) {
-        return "Your savings are too low right now. Focus on building at least 6 months of expenses before quitting.";
-      }
-
-      // ❗ CAREER PROBLEM
-      if (weakCareer) {
-        return "You need more experience or stronger skills in the new field before leaving your current job.";
-      }
-
-      // ❗ MENTAL READINESS PROBLEM
-      if (weakMind) {
-        return "You may not be emotionally ready for the uncertainty of a career change. Strengthen your confidence and stability first.";
-      }
-
-      // MIXED CASE
-      return "Some areas look ready, but others need work. Improve the weaker areas before making a final decision.";
-    })(),
-  },
-  style: {
-    padding: 26,
-    borderRadius: 18,
-    background: "#a78bfa",
-    color: "#111827",
-    fontWeight: 600,
-    width: 460,
-    textAlign: "center",
-    lineHeight: "1.5",
-  },
-},
-        ]}
-        edges={[
-          { id: "e1", source: "start", target: "financial" },
-          { id: "e2", source: "start", target: "professional" },
-          { id: "e3", source: "start", target: "personal" },
-          { id: "e4", source: "financial", target: "final" },
-          { id: "e5", source: "professional", target: "final" },
-          { id: "e6", source: "personal", target: "final" },
-        ]}
-        fitView
-      />
-    </div>
-
-    <button
-      className="start-over"
-      onClick={() => {
-        setStep(1);
-        setResult(null);
-      }}
-    >
-      Start Over
-    </button>
-  </div>
-)}
+          <button className="start-over" onClick={resetApp}>
+            Start Over
+          </button>
+        </div>
+      )}
     </div>
   );
 }
