@@ -11,9 +11,9 @@ class FinancialInput(BaseModel):
 
 
 class ProfessionalInput(BaseModel):
-    years_experience: int
+    years_experience: float
     market_demand_level: str   # very_high, growing, stable, saturated, declining
-    expected_months_before_income: int
+    expected_months_before_income: float
     career_switch_type: str    # same_field, adjacent_field, new_field
 
 

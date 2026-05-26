@@ -12,7 +12,9 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://career-switch-decision-assistant.vercel.app"
+        "https://career-switch-decision-assistant.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -25,36 +27,48 @@ def home():
 
 @app.post("/simulate")
 def simulate(data: SimulationInput):
+    import traceback
+    try:
+        financial_result = calculate_financial_metrics(data.financial)
+        # Attach raw current_savings for monte carlo infinite-runway case
+        financial_result["current_savings"] = data.financial.current_savings
 
-    financial_result = calculate_financial_metrics(data.financial)
-    professional_result = calculate_professional_metrics(data.professional)
-    personal_result = calculate_personal_metrics(data.personal)
+        professional_result = calculate_professional_metrics(data.professional)
+        personal_result = calculate_personal_metrics(data.personal)
 
-    overall_result = calculate_overall_decision_risk(
-        financial_result,
-        professional_result,
-        personal_result
-    )
+        overall_result = calculate_overall_decision_risk(
+            financial_result,
+            professional_result,
+            personal_result
+        )
 
-    scenarios = generate_scenarios(
-        financial_result,
-        professional_result,
-        personal_result,
-        overall_result
-    )
+        scenarios = generate_scenarios(
+            financial_result,
+            professional_result,
+            personal_result,
+            overall_result
+        )
 
-    monte_carlo_result = run_monte_carlo(
-        financial_result,
-        professional_result,
-        personal_result,
-        iterations=1000
-    )
+        monte_carlo_result = run_monte_carlo(
+            financial_result,
+            professional_result,
+            personal_result,
+            iterations=1000
+        )
 
-    return {
-        "financial_analysis": financial_result,
-        "professional_analysis": professional_result,
-        "personal_analysis": personal_result,
-        "decision_summary": overall_result,
-        "scenario_simulation": scenarios,
-        "monte_carlo_simulation": monte_carlo_result
-    }
+        return {
+            "financial_analysis": financial_result,
+            "professional_analysis": professional_result,
+            "personal_analysis": personal_result,
+            "decision_summary": overall_result,
+            "scenario_simulation": scenarios,
+            "monte_carlo_simulation": monte_carlo_result
+        }
+    except Exception as e:
+        traceback.print_exc()
+        try:
+            with open("backend_error.log", "w") as f:
+                f.write(traceback.format_exc())
+        except Exception:
+            pass
+        return {"error": str(e), "traceback": traceback.format_exc()}
